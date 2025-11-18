@@ -25,9 +25,10 @@ void setup() {
   Serial.begin(9600);
 
   tft.initR(INITR_BLACKTAB);
-  tft.setRotation(1);
-  tft.fillScreen(ST77XX_WHITE);
+  tft.setRotation(1);//rodar horizontalmente 
+  tft.fillScreen(ST77XX_WHITE);//fund branco
 
+//configurar pinos dos sensores
   pinMode(trigVidro, OUTPUT);
   pinMode(echoVidro, INPUT);
 
@@ -39,41 +40,46 @@ void setup() {
 }
 
 void loop() {
+  //medir distancias lidas pelos sensores
   float distVidro = medirDist(trigVidro, echoVidro);
   float distPlastico = medirDist(trigPlastico, echoPlastico);
   float distPapel = medirDist(trigPapel, echoPapel);
 
+//passar a distancia para percentagens 
+//quaanto menor a distancia, mais cheio esta o caixote
   float vidro = (30 - distVidro) / 25.0 * 100;
   float plastico = (30 - distPlastico) / 25.0 * 100;
   float papel = (30 - distPapel) / 25.0 * 100;
 
+//garantir que ficam entre 0 e 100
   vidro = constrain(vidro, 0, 100);
   plastico = constrain(plastico, 0, 100);
   papel = constrain(papel, 0, 100);
 
+//limpar o ecra a cada atualização
   tft.fillScreen(ST77XX_WHITE);
 
-  int alturaMax = 80;
-  int baseY = 110;
-  int largura = 30;
+  int alturaMax = 80;//altura maxima das barras 
+  int baseY = 110;//posição base das barras 
+  int largura = 30;//largura de cada barra 
 
-  // ============================================================
-  //                         VIDRO
-  // ============================================================
-  int altVidro = map(vidro, 0, 100, 0, alturaMax);
-  int xVidro = 20;
+
+  //VIDRO
+  int altVidro = map(vidro, 0, 100, 0, alturaMax);//converter % para altura grafica 
+  int xVidro = 20;//posição da barra no ecrã
 
   tft.fillRect(xVidro, baseY - altVidro, largura, altVidro, ST77XX_GREEN);
 
   if (vidro >= 100) {
+    //se estiver cheio escreve cheio na vertical
     tft.setTextColor(ST77XX_BLACK);
     tft.setTextSize(1);
 
     char texto[] = "CHEIO";
-    int numLetras = 5;
+    int numLetras = 5;//numero de letras da palavra cheio
 
     int letraX = xVidro + largura/2 - 3;  // centralizar horizontalmente
-    int espaco = altVidro / (numLetras + 1);
+    int espaco = altVidro / (numLetras + 1);//espaçamento entre letras 
 
     for (int i = 0; i < numLetras; i++) {
       int letraY = (baseY - altVidro) + espaco * (i + 1);
@@ -82,6 +88,7 @@ void loop() {
     }
 
   } else {
+    //caso contrario mostra a percentagem por cima
     tft.setTextColor(ST77XX_BLACK);
     tft.setTextSize(1);
     tft.setCursor(xVidro + 5, baseY - altVidro - 15);
@@ -90,9 +97,7 @@ void loop() {
   }
 
 
-  // ============================================================
-  //                         PLÁSTICO
-  // ============================================================
+  //PLÁSTICO
   int altPlastico = map(plastico, 0, 100, 0, alturaMax);
   int xPlastico = 70;
 
@@ -122,9 +127,8 @@ void loop() {
   }
 
 
-  // ============================================================
-  //                         PAPEL
-  // ============================================================
+
+  //PAPEL
   int altPapel = map(papel, 0, 100, 0, alturaMax);
   int xPapel = 120;
 
@@ -154,7 +158,7 @@ void loop() {
   }
 
 
-  delay(1000);
+  delay(1000);//atualizações de 1 em 1 segundos 
 }
 
 float medirDist(int trigPin, int echoPin) {
@@ -165,6 +169,8 @@ float medirDist(int trigPin, int echoPin) {
   digitalWrite(trigPin, LOW);
 
   long duracao = pulseIn(echoPin, HIGH, 30000);
+
+  //converter o tempo para distancia
   float distancia = duracao / 58;
 
   return distancia;
