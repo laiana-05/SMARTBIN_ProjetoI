@@ -1,0 +1,171 @@
+#include <Adafruit_GFX.h>
+#include <Adafruit_ST7735.h>
+#include <SPI.h>
+
+// --- Pinos TFT ---
+#define TFT_CS   20
+#define TFT_DC   19
+#define TFT_RST  18
+#define TFT_SCK  15
+#define TFT_MOSI 9
+
+Adafruit_ST7735 tft = Adafruit_ST7735(TFT_CS, TFT_DC, TFT_MOSI, TFT_SCK, TFT_RST);
+
+// --- Sensores ultrassónicos ---
+#define trigVidro     2
+#define echoVidro     3
+
+#define trigPlastico  4
+#define echoPlastico  5
+
+#define trigPapel     6
+#define echoPapel     7
+
+void setup() {
+  Serial.begin(9600);
+
+  tft.initR(INITR_BLACKTAB);
+  tft.setRotation(1);
+  tft.fillScreen(ST77XX_WHITE);
+
+  pinMode(trigVidro, OUTPUT);
+  pinMode(echoVidro, INPUT);
+
+  pinMode(trigPlastico, OUTPUT);
+  pinMode(echoPlastico, INPUT);
+
+  pinMode(trigPapel, OUTPUT);
+  pinMode(echoPapel, INPUT);
+}
+
+void loop() {
+  float distVidro = medirDist(trigVidro, echoVidro);
+  float distPlastico = medirDist(trigPlastico, echoPlastico);
+  float distPapel = medirDist(trigPapel, echoPapel);
+
+  float vidro = (30 - distVidro) / 25.0 * 100;
+  float plastico = (30 - distPlastico) / 25.0 * 100;
+  float papel = (30 - distPapel) / 25.0 * 100;
+
+  vidro = constrain(vidro, 0, 100);
+  plastico = constrain(plastico, 0, 100);
+  papel = constrain(papel, 0, 100);
+
+  tft.fillScreen(ST77XX_WHITE);
+
+  int alturaMax = 80;
+  int baseY = 110;
+  int largura = 30;
+
+  // ============================================================
+  //                         VIDRO
+  // ============================================================
+  int altVidro = map(vidro, 0, 100, 0, alturaMax);
+  int xVidro = 20;
+
+  tft.fillRect(xVidro, baseY - altVidro, largura, altVidro, ST77XX_GREEN);
+
+  if (vidro >= 100) {
+    tft.setTextColor(ST77XX_BLACK);
+    tft.setTextSize(1);
+
+    char texto[] = "CHEIO";
+    int numLetras = 5;
+
+    int letraX = xVidro + largura/2 - 3;  // centralizar horizontalmente
+    int espaco = altVidro / (numLetras + 1);
+
+    for (int i = 0; i < numLetras; i++) {
+      int letraY = (baseY - altVidro) + espaco * (i + 1);
+      tft.setCursor(letraX, letraY);
+      tft.print(texto[i]);
+    }
+
+  } else {
+    tft.setTextColor(ST77XX_BLACK);
+    tft.setTextSize(1);
+    tft.setCursor(xVidro + 5, baseY - altVidro - 15);
+    tft.print((int)vidro);
+    tft.print("%");
+  }
+
+
+  // ============================================================
+  //                         PLÁSTICO
+  // ============================================================
+  int altPlastico = map(plastico, 0, 100, 0, alturaMax);
+  int xPlastico = 70;
+
+  tft.fillRect(xPlastico, baseY - altPlastico, largura, altPlastico, ST77XX_YELLOW);
+
+  if (plastico >= 100) {
+    tft.setTextColor(ST77XX_BLACK);
+    tft.setTextSize(1);
+
+    char texto[] = "CHEIO";
+    int numLetras = 5;
+    int letraX = xPlastico + largura/2 - 3;
+    int espaco = altPlastico / (numLetras + 1);
+
+    for (int i = 0; i < numLetras; i++) {
+      int letraY = (baseY - altPlastico) + espaco * (i + 1);
+      tft.setCursor(letraX, letraY);
+      tft.print(texto[i]);
+    }
+
+  } else {
+    tft.setTextColor(ST77XX_BLACK);
+    tft.setTextSize(1);
+    tft.setCursor(xPlastico + 5, baseY - altPlastico - 15);
+    tft.print((int)plastico);
+    tft.print("%");
+  }
+
+
+  // ============================================================
+  //                         PAPEL
+  // ============================================================
+  int altPapel = map(papel, 0, 100, 0, alturaMax);
+  int xPapel = 120;
+
+  tft.fillRect(xPapel, baseY - altPapel, largura, altPapel, ST77XX_BLUE);
+
+  if (papel >= 100) {
+    tft.setTextColor(ST77XX_BLACK);
+    tft.setTextSize(1);
+
+    char texto[] = "CHEIO";
+    int numLetras = 5;
+    int letraX = xPapel + largura/2 - 3;
+    int espaco = altPapel / (numLetras + 1);
+
+    for (int i = 0; i < numLetras; i++) {
+      int letraY = (baseY - altPapel) + espaco * (i + 1);
+      tft.setCursor(letraX, letraY);
+      tft.print(texto[i]);
+    }
+
+  } else {
+    tft.setTextColor(ST77XX_BLACK);
+    tft.setTextSize(1);
+    tft.setCursor(xPapel + 5, baseY - altPapel - 15);
+    tft.print((int)papel);
+    tft.print("%");
+  }
+
+
+  delay(1000);
+}
+
+float medirDist(int trigPin, int echoPin) {
+  digitalWrite(trigPin, LOW);
+  delayMicroseconds(2);
+  digitalWrite(trigPin, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(trigPin, LOW);
+
+  long duracao = pulseIn(echoPin, HIGH, 30000);
+  float distancia = duracao / 58;
+
+  return distancia;
+}
